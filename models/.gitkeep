@@ -1,0 +1,2 @@
+# Trained model artifacts (joblib/pkl) are saved here in Phase 3.
+# They are gitignored - never commit model binaries.

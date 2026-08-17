@@ -1,0 +1,46 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# ---------- Jupyter ----------
+.ipynb_checkpoints/
+
+# ---------- Dataset files (official Kaggle data - DO NOT commit) ----------
+data/raw/*.csv
+data/processed/*.csv
+
+# ---------- Trained models / artifacts (binary files - DO NOT commit) ----------
+models/*.joblib
+models/*.pkl
+models/*.json
+
+# ---------- Streamlit ----------
+.streamlit/secrets.toml
+
+# ---------- Secrets / credentials ----------
+.env
+.env.*
+*.pem
+*.key
+
+# ---------- Tests / coverage ----------
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ---------- OS / editor ----------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ---------- Logs ----------
+*.log
