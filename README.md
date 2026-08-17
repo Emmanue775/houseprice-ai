@@ -6,12 +6,16 @@ data preprocessing, EDA, feature engineering, model comparison with
 cross-validation, hyperparameter tuning, a Kaggle submission, and a
 production-ready Streamlit prediction app.
 
-> 🚧 **Status: Phase 6 complete.** The full pipeline is implemented and
+> 🚧 **Status: Phase 7 complete.** The full pipeline is implemented and
 > verified: models are cross-validated and tuned on the real dataset, a
-> submission was generated from the saved model, and the Streamlit app
-> produces live predictions from the trained artifact. A **Kaggle submission
-> was made with a private score of 0.12656** (log-RMSE). Docker + CI/CD is
-> the remaining roadmap item.
+> submission was generated from the saved model (private Kaggle score
+> **0.12656**), and the Streamlit app produces live predictions from the
+> trained artifact. Phase 7 extended the XGBoost hyperparameter search and
+> re-verified every alternative (see `reports/model_development.md`): the
+> new best config achieves **CV log-RMSE 0.1256** (vs 0.1270 baseline) and
+> is now the saved artifact, with a candidate submission ready in
+> `data/processed/kaggle_submission_v2.csv`. Docker + CI/CD is the remaining
+> roadmap item.
 
 ## Problem statement
 
@@ -86,7 +90,7 @@ All trained and cross-validated on the **same** seeded 5-fold splits with the
 
 | model | mean CV log-RMSE | std |
 |---|--:|--:|
-| **XGBoost** (tuned) | **0.1270** | — |
+| **XGBoost** (tuned, Phase 7) | **0.1256** | 0.0157 |
 | XGBoost (default) | 0.1272 | 0.0151 |
 | GradientBoosting | 0.1309 | 0.0157 |
 | RandomForest | 0.1424 | 0.0159 |
@@ -106,10 +110,18 @@ All models share identical folds and scoring, making the comparison fair.
 `GridSearchCV` over the CV winner (`TUNE_GRIDS` in `src/models/train.py`),
 scoring `neg_root_mean_squared_error` on the log1p target:
 
-- XGBoost grid: `n_estimators` {150, 300}, `learning_rate` {0.03, 0.05},
-  `max_depth` {3, 5}
-- **Selected:** `{'learning_rate': 0.05, 'max_depth': 3, 'n_estimators': 300}`
-  → tuned CV log-RMSE **0.1270** (from actual validation, not hard-coded).
+- Phase 3 grid: `n_estimators` {150, 300}, `learning_rate` {0.03, 0.05},
+  `max_depth` {3, 5} → **selected** `{'learning_rate': 0.05, 'max_depth': 3,
+  'n_estimators': 300}`, CV **0.1270**.
+- Phase 7 extended search (`src/models/experiments.py`, same seeded folds):
+  `learning_rate` {0.03, 0.05}, `max_depth` {3, 4, 5}, `min_child_weight`
+  {1, 5}, `subsample` {0.8, 1.0}, `colsample_bytree` {0.8, 1.0},
+  `reg_alpha` {0, 0.1, 1}, `reg_lambda` {1, 5}, `gamma` {0, 0.1, 0.3},
+  `n_estimators` {300, 500} → **selected** `{'learning_rate': 0.05,
+  'max_depth': 3, 'min_child_weight': 1, 'subsample': 0.8,
+  'colsample_bytree': 1.0, 'n_estimators': 500, 'reg_alpha': 0.0,
+  'reg_lambda': 1.0, 'gamma': 0.0}`, honest CV **0.1256**. Feature and
+  ensemble experiments did not beat it (see `reports/model_development.md`).
 
 The tuned model is refit on all training data and saved to
 `models/best_model.joblib` (model + `feature_columns` + `target_transform`).
@@ -201,6 +213,7 @@ HousePrice-AI/
 │   │   └── feature_engineering.py
 │   ├── models/
 │   │   ├── train.py          # CV + tuning + save best model
+│   │   ├── experiments.py    # Phase 7 experiments (no artifact writes)
 │   │   ├── predict.py        # inference used by the Streamlit app
 │   │   └── submission.py     # Kaggle submission generation
 │   └── evaluation/evaluate.py  # RMSE / log-RMSE + CV helper
@@ -213,7 +226,7 @@ HousePrice-AI/
 pytest
 ```
 
-36 tests covering preprocessing, feature engineering, evaluation metrics,
+46 tests covering preprocessing, feature engineering, evaluation metrics,
 training artifacts, the submission pipeline, and the Phase 6 prediction path
 (including an end-to-end prediction against the saved artifact). Tests use
 tiny synthetic data; artifact-dependent tests skip when the model is absent.
@@ -228,7 +241,8 @@ tiny synthetic data; artifact-dependent tests skip when the model is absent.
 | 4 | Cross-validation + hyperparameter tuning | ✅ |
 | 5 | Kaggle submission (score 0.12656) | ✅ |
 | 6 | Streamlit prediction app | ✅ |
-| 7 | Docker + CI/CD | ⏳ |
+| 7 | Model development & improvement (CV 0.1256, see `reports/model_development.md`) | ✅ |
+| 8 | Docker + CI/CD | ⏳ |
 
 ## Honesty policy
 
